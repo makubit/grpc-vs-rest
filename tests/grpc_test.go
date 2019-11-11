@@ -11,12 +11,12 @@ import (
 )
 
 func grpcSendToClient(client pb.SortingServiceClient, t *testing.B) {
-	r, err := client.Sort(context.Background(), &pb.SortRequest{TableToSort: []int32{4,3,2,4,3,2}})
+	_, err := client.Sort(context.Background(), &pb.SortRequest{TableToSort: []int32{4,3,2,4,3,2}})
 	if err != nil {
 		log.Fatalf("Could not sort: %v", err)
 	}
 
-	log.Println("Sorted: ", r.SortedTable)
+	//log.Println("Sorted: ", r.SortedTable)
 }
 
 func init() {
