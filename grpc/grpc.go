@@ -1,18 +1,23 @@
 package grpc
 
-import(
-	//"errors"
-	//"log"
-	"math/rand"
+import (
+	"google.golang.org/grpc/reflection"
+	"log"
+	"net"
 	"sync"
 
-	"golang.org/x/net/context"
-	//"google.golang.org/grpc"
 	pb "github.com/makubit/grpc-vs-rest/grpc/proto"
+	q "github.com/makubit/grpc-vs-rest/quickSort"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+)
+
+const (
+	port=":50051"
 )
 
 type repository interface {
-	Sort(request *pb.SortRequest) (*pb.SortRequest, error)
+	Sort(request *pb.SortRequest) ([]int32, error)
 }
 
 type Repository struct {
@@ -20,14 +25,13 @@ type Repository struct {
 	sortedTableRequest *pb.SortRequest
 }
 
-func (repo *Repository)Sort(sortRequest *pb.SortRequest) (*pb.SortRequest, error) {
+func (repo *Repository)Sort(sortRequest *pb.SortRequest) ([]int32, error) {
 	var sortedTable []int32
 	repo.mu.Lock()
-	sortedTable, _ = quickSort(sortRequest.GetTableToSort())
-	repo.sortedTableRequest.TableToSort = sortedTable
+	sortedTable, _ = q.QuickSort(sortRequest.GetTableToSort())
 	repo.mu.Unlock()
 
-	return sortRequest, nil
+	return sortedTable, nil
 }
 
 type service struct {
@@ -35,38 +39,30 @@ type service struct {
 }
 
 func (s *service)Sort(ctx context.Context, req *pb.SortRequest) (*pb.Response, error)  {
-	sortedTableRequest, err := s.repo.Sort(req)
+	sortedTable, err := s.repo.Sort(req)
+
+	//sortedTable,err := q.QuickSort(req.GetTableToSort())
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.Response{Sorted: true, SortedTable: sortedTableRequest.TableToSort}, nil
+	return &pb.Response{Sorted: true, SortedTable: sortedTable}, nil
 }
 
-//---------
+func StartGRPC() {
+	repo := &Repository{}
 
-func quickSort(unsortedTable []int32) ([]int32, error) {
-	if len(unsortedTable) < 2 {
-		return unsortedTable, nil
+	lis, err := net.Listen("tcp", port)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
 	}
 
-	left, right := 0, len(unsortedTable)-1
+	s := grpc.NewServer()
+	pb.RegisterSortingServiceServer(s, &service{repo})
+	reflection.Register(s)
 
-	pivot := rand.Int() % len(unsortedTable)
-
-	unsortedTable[pivot], unsortedTable[right] = unsortedTable[right], unsortedTable[pivot]
-
-	for i, _ := range unsortedTable {
-		if unsortedTable[i] < unsortedTable[right] {
-			unsortedTable[left], unsortedTable[i] = unsortedTable[i], unsortedTable[left]
-			left++
-		}
+	log.Println("Running on port:", port)
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serce: %v", err)
 	}
-
-	unsortedTable[left], unsortedTable[right] = unsortedTable[right], unsortedTable[left]
-
-	quickSort(unsortedTable[:left])
-	quickSort(unsortedTable[left+1:])
-
-	return unsortedTable, nil
 }

@@ -2,7 +2,7 @@ package quickSort
 
 import "math/rand"
 
-func quickSort(unsortedTable []int32) ([]int32, error) {
+func QuickSort(unsortedTable []int32) ([]int32, error) {
 	if len(unsortedTable) < 2 {
 		return unsortedTable, nil
 	}
@@ -22,8 +22,8 @@ func quickSort(unsortedTable []int32) ([]int32, error) {
 
 	unsortedTable[left], unsortedTable[right] = unsortedTable[right], unsortedTable[left]
 
-	_, _ = quickSort(unsortedTable[:left])
-	_, _ = quickSort(unsortedTable[left+1:])
+	_, _ = QuickSort(unsortedTable[:left])
+	_, _ = QuickSort(unsortedTable[left+1:])
 
 	return unsortedTable, nil
 }
