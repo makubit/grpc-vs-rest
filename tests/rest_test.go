@@ -24,7 +24,7 @@ func BenchmarkREST(t *testing.B) {
 
 func postToREST(client *http.Client, t *testing.B) {
 	sort := &rest.SortRequest{
-		TableToSort: []int32{1, 3, 4, 2, 3, 1},
+		TableToSort: []int32{4,3,2,4,3,2},
 	}
 	buf := new(bytes.Buffer)
 	json.NewEncoder(buf).Encode(sort)
